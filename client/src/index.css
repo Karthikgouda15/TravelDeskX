@@ -1,0 +1,143 @@
+/* src/index.css */
+@import "tailwindcss";
+
+@theme {
+  --color-background: #000000;
+  --color-accent: #FFFFFF;
+  --color-secondary: #FFFFFF;
+  --color-surface: #0A0A0A;
+  --color-surface-hover: #121212; 
+  --color-text-primary: #FFFFFF;
+  --color-text-muted: #A1A1A1;
+  --color-border-subtle: #1A1A1A;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", monospace;
+
+  --background-image-grid-pattern: none;
+
+  @keyframes noise {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5%, -5%); }
+    20% { transform: translate(-10%, 5%); }
+    30% { transform: translate(5%, -10%); }
+    40% { transform: translate(-5%, 15%); }
+    50% { transform: translate(-10%, 5%); }
+    60% { transform: translate(15%, 0); }
+    70% { transform: translate(0, 10%); }
+    80% { transform: translate(-15%, 0); }
+    90% { transform: translate(10%, 5%); }
+  }
+}
+
+/* Apple Pro UI Utilities */
+@utility glass {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(28px);
+  border: 1px solid #1A1A1A;
+  border-radius: 1.25rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+@utility glass-card {
+  @apply glass p-8 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)];
+  border: 1px solid #1A1A1A;
+  &:hover {
+    border-color: #444444;
+    background-color: rgba(255, 255, 255, 0.02);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@utility apple-headline {
+  @apply text-[56px] font-bold tracking-[-0.05em] leading-[1.05] text-white;
+}
+
+@utility silver-text {
+  background: linear-gradient(180deg, #FFFFFF 0%, #A1A1A1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility apple-subheadline {
+  @apply text-[21px] font-normal tracking-[-0.015em] text-[#A1A1A1] leading-relaxed;
+}
+
+@utility text-link-apple {
+  @apply inline-flex items-center gap-1 text-white hover:opacity-70 transition-opacity font-medium;
+  &::after {
+    content: " \2192";
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  &:hover::after {
+    transform: translateX(6px);
+  }
+}
+
+@utility noise-overlay {
+  position: fixed;
+  inset: -150%;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  animation: noise 0.5s steps(1) infinite;
+}
+
+@utility perspective-1000 {
+  perspective: 1000px;
+}
+
+@utility btn-primary {
+  @apply bg-white text-black font-bold py-3.5 px-8 rounded-full hover:scale-[1.02] active:scale-95 transition-all text-sm tracking-tight border border-white/20;
+}
+
+@utility input-field {
+  @apply w-full px-5 py-4 bg-black border border-[#1A1A1A] rounded-xl text-white outline-none focus:border-white/40 transition-all placeholder:text-[#333] selection:bg-white/20;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #000000;
+  }
+
+  body {
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    margin: 0;
+  }
+  
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.04em;
+  }
+
+  ::selection {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 2px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #222222;
+  }
+}
+
+.btn-secondary {
+  @apply text-white border border-[#1A1A1A] py-3 px-8 rounded-full hover:bg-white hover:text-black transition-all text-sm font-medium;
+}
+
+.btn-outline {
+  @apply text-white/60 hover:text-white transition-colors text-sm font-medium;
+}
