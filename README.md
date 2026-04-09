@@ -84,6 +84,5 @@ npm run dev
 Access the full OpenAPI specification and technical endpoints via the integrated Swagger console:
 - **API Reference**: `http://localhost:5002/api/docs`
 
----
-**Architected by Antigravity**
-Precision. Minimalism. Performance.
+
+
