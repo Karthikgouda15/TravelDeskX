@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const http = require('http');
+const path = require('path');
 
 // Config and DB
 dotenv.config();
@@ -21,6 +22,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const itineraryRoutes = require('./routes/itineraryRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const transportRoutes = require('./routes/transportRoutes');
+const trainRoutes = require('./routes/trainRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger/swaggerDocs');
 
@@ -29,6 +31,8 @@ const errorHandler = require('./middleware/error');
 
 // Socket.io
 const { initSocket } = require('./sockets/index');
+
+const busRoutes = require('./routes/busRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -83,9 +87,21 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/itineraries', itineraryRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/transport', transportRoutes);
+app.use('/api/trains', trainRoutes);
+app.use('/api/buses', busRoutes);
 
 // Swagger Documentation API
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Serve Static Assets in Production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  });
+}
 
 // Custom Error Handler Middleware
 app.use(errorHandler);

@@ -48,7 +48,7 @@ const MyBookings = () => {
                   ${activeTab === tab ? 'bg-accent border-accent text-background shadow-lg shadow-accent/20' : 'bg-white/5 border-white/10 text-textMuted hover:border-white/20 hover:text-white'}
                `}
             >
-               {tab}s
+               {tab === 'all' ? 'All' : tab === 'bus' ? 'Buses' : tab + 's'}
             </button>
          ))}
       </div>
@@ -79,18 +79,41 @@ const MyBookings = () => {
                               {booking.type === 'train' && <Train size={24} />}
                               {booking.type === 'bus' && <Bus size={24} />}
                            </div>
-                           <div className="space-y-1">
+                            <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                  <h4 className="font-heading font-black text-lg">
-                                    {booking.type === 'flight' ? 'Mumbai (BOM) → Delhi (DEL)' : 'The Imperial New Delhi'}
+                                    {booking.categoryModel === 'Flight' && (booking.referenceId?.origin || 'Flight Trip')}
+                                    {booking.categoryModel === 'Hotel' && (booking.referenceId?.name || 'Hotel Stay')}
+                                    {booking.categoryModel === 'Train' && (booking.referenceId?.name || 'Train Journey')}
+                                    {booking.categoryModel === 'Bus' && (
+                                      booking.referenceId?.origin?.city 
+                                      ? `${booking.referenceId?.origin?.city} to ${booking.referenceId?.destination?.city || 'Unknown'}`
+                                      : 'Bus Journey'
+                                    )}
                                  </h4>
                                  <StatusBadge status={booking.status} />
                               </div>
                               <div className="flex items-center gap-4 text-xs font-mono text-textMuted">
                                  <div className="flex items-center gap-1.5"><Calendar size={12} className="text-secondary" /> {new Date(booking.createdAt).toLocaleDateString()}</div>
-                                 <div className="flex items-center gap-1.5"><Briefcase size={12} className="text-accent" /> {booking.seats?.length || 1} {booking.type === 'flight' ? 'Seat' : 'Room'}</div>
-                                 <div className="flex items-center gap-1.5 font-black text-white">$ {booking.totalPrice}</div>
+                                 <div className="flex items-center gap-1.5">
+                                   <Briefcase size={12} className="text-accent" /> 
+                                   {booking.type === 'bus' ? `${booking.passengers?.length || 0} Passengers` : 
+                                    booking.type === 'flight' ? `${booking.seats?.length || 0} Seats` :
+                                    booking.type === 'hotel' ? '1 Room' : '1 Booking'}
+                                 </div>
+                                 <div className="flex items-center gap-1.5 font-black text-white">₹ {booking.totalPrice}</div>
                               </div>
+                              
+                              {/* Passenger Small Badge Summary for Bus */}
+                              {booking.type === 'bus' && booking.passengers?.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                  {booking.passengers.map((p, idx) => (
+                                    <div key={idx} className="px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-[9px] font-bold text-textMuted">
+                                      {p.seatNumber}: {p.name}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                            </div>
                         </div>
 

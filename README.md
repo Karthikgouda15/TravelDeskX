@@ -80,9 +80,32 @@ npm run dev
 
 ---
 
+## ☁️ Cloud Deployment: TravelDesk Pro
+
+TravelDesk Pro is optimized for a unified MERN deployment where the backend handles both the API and the frontend assets.
+
+### 1. MongoDB Atlas Setup
+Professional deployment requires a cloud-hosted database.
+1. Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Whitelist `0.0.0.0/0` (or your platform's IP range).
+3. Copy your Connection String and swap it in your environment config.
+
+### 2. Required Production Environment Variables
+Set these on your hosting provider (Render, Railway, etc.):
+- `NODE_ENV`: `production`
+- `MONGO_URI`: `your_mongodb_atlas_connection_string`
+- `JWT_ACCESS_SECRET`: `highly_secure_random_hash`
+- `PORT`: `5002` (or your provider's dynamic port)
+
+### 3. Deploying to Render / Railway
+This repository features a root-level `package.json` that automates the build.
+1. **Connect Repository**: Link your GitHub repo to the platform.
+2. **Build Command**: `npm run build` (This installs all deps and builds the React app).
+3. **Start Command**: `npm start` (This launches the Express server in production mode).
+
+---
+
 ## 📜 Documentation & Reliability
 Access the full OpenAPI specification and technical endpoints via the integrated Swagger console:
 - **API Reference**: `http://localhost:5002/api/docs`
-
-
 

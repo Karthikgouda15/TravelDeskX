@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setStep, updatePassengerInfo, createFlightBooking, createHotelBooking, createTrainBooking, createBusBooking, clearCheckout } from '../features/bookingSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { ShieldCheck, User, Users, CheckCircle2, ArrowRight, Plane, Hotel, Train, Bus, CreditCard, ChevronRight } from 'lucide-react';
+import { Shield, User, Users, CheckCircle2, ArrowRight, Plane, Hotel, Train, Bus, CreditCard, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Checkout = () => {
@@ -14,16 +14,42 @@ const Checkout = () => {
   const { currentStep, flight, hotel, train, bus, item, type, selectedSeats, selectedRoom, classType, passengerInfo, totalPrice, bookingResponse } = checkout;
 
   const handleNextStep = () => {
-     if (currentStep === 1) dispatch(setStep(2));
-     else if (currentStep === 2) {
+     if (currentStep === 1) {
+       dispatch(setStep(2));
+       return;
+     }
+     
+     if (currentStep === 2) {
+        if (!item?._id) {
+          console.error('Missing item ID');
+          return;
+        }
+
         if (type === 'flight') {
-           dispatch(createFlightBooking({ flightId: item._id, seatNumbers: selectedSeats }));
+           dispatch(createFlightBooking({ flightId: item._id, seatNumbers: selectedSeats || [] }));
         } else if (type === 'hotel') {
-           dispatch(createHotelBooking({ hotelId: item._id, roomId: selectedRoom._id, checkIn: '2026-06-01', checkOut: '2026-06-05' }));
+           dispatch(createHotelBooking({ 
+             hotelId: item._id, 
+             roomId: selectedRoom?._id, 
+             checkIn: checkout.checkIn || new Date().toISOString(), 
+             checkOut: checkout.checkOut || new Date(Date.now() + 86400000).toISOString() 
+           }));
         } else if (type === 'train') {
-           dispatch(createTrainBooking({ trainId: item._id, classType, passengers: 1 }));
+           dispatch(createTrainBooking({ 
+             trainId: item._id, 
+             classType: classType || 'CC', 
+             passengers: checkout.passengerDetails?.length || 1 
+           }));
         } else if (type === 'bus') {
-           dispatch(createBusBooking({ busId: item._id, seatCount: 1 }));
+           if (!checkout.passengerDetails || checkout.passengerDetails.length === 0) {
+             console.error('Missing passenger details for bus booking');
+             return;
+           }
+           dispatch(createBusBooking({ 
+             busId: item._id, 
+             seatNumbers: selectedSeats || [], 
+             passengerDetails: checkout.passengerDetails 
+           }));
         }
      }
   };
@@ -40,22 +66,20 @@ const Checkout = () => {
         <title>Checkout | TravelDesk</title>
       </Helmet>
 
-      {/* Step Indicator */}
-      <div className="flex justify-between items-center mb-16 relative">
-         <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/10 -z-10"></div>
-         {steps.map((step) => (
-           <div key={step.id} className="flex flex-col items-center gap-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500
-                 ${currentStep >= step.id ? 'bg-accent border-accent text-background shadow-[0_0_20px_rgba(0,212,200,0.4)]' : 'bg-background border-white/10 text-textMuted'}
-              `}>
-                <step.icon size={20} />
-              </div>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${currentStep >= step.id ? 'text-accent' : 'text-textMuted'}`}>
-                 {step.name}
-              </span>
-           </div>
-         ))}
-      </div>
+      {/* Error Display */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-bold uppercase tracking-widest italic"
+          >
+            <Shield size={18} className="shrink-0" />
+            <span>{error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {currentStep === 1 && (
@@ -99,6 +123,28 @@ const Checkout = () => {
                 </div>
               )}
             </div>
+
+            {type === 'bus' && checkout.passengerDetails && (
+              <div className="glass-card animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <h3 className="text-[10px] font-black uppercase text-accent tracking-[0.2em] mb-6 px-1">Passenger Summary</h3>
+                <div className="grid gap-4">
+                  {checkout.passengerDetails.map((p, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white font-black text-xs">
+                          {p.seatNumber}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white">{p.name}</p>
+                          <p className="text-[10px] font-medium text-textMuted uppercase tracking-widest">{p.gender} • {p.age} Years</p>
+                        </div>
+                      </div>
+                      <div className="text-[10px] font-black text-accent uppercase tracking-widest italic">Confirmed</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-6">
                <button className="btn-outline px-12" onClick={() => navigate(-1)}>Go Back</button>

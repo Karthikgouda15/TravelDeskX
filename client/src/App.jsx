@@ -12,6 +12,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy Loaded Pages
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -84,12 +85,12 @@ function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 {/* Public / Auth */}
+                <Route path="/" element={!isAuthenticated ? <Landing /> : <Navigate to="/flights" />} />
                 <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/flights" />} />
                 <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/flights" />} />
                 
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Navigate to="/flights" />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/flights" element={<Flights />} />
                   <Route path="/hotels" element={<Hotels />} />

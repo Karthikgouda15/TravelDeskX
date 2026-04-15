@@ -4,9 +4,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAnalytics, setDays } from '../features/analyticsSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, DollarSign, Hotel, Globe, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { BarChart as BarChartIcon, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Users, DollarSign, Hotel, Globe, Calendar, Filter, RefreshCw, BarChart as LucideBarChart, Search } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+
+// Safe Icon wrapper to prevent crashes if an icon is missing from the library
+const SafeIcon = ({ icon: Icon, ...props }) => {
+  if (!Icon) return <Search {...props} />;
+  return <Icon {...props} />;
+};
 
 const COLORS = ['#00D4C8', '#FF6B35', '#A855F7', '#3B82F6', '#EAB308'];
 
@@ -20,8 +26,8 @@ const AdminAnalytics = () => {
   }, [dispatch, days]);
 
   const kpis = [
-    { title: 'Total Bookings', value: data.bookings.reduce((acc, curr) => acc + curr.count, 0), icon: TrendingUp, color: 'text-accent' },
-    { title: 'Total Revenue', value: `$${data.revenue.reduce((acc, curr) => acc + curr.totalRevenue, 0).toLocaleString()}`, icon: DollarSign, color: 'text-secondary' },
+    { title: 'Total Bookings', value: data?.bookings?.reduce((acc, curr) => acc + curr.count, 0) || 0, icon: TrendingUp, color: 'text-accent' },
+    { title: 'Total Revenue', value: `₹${(data?.revenue?.reduce((acc, curr) => acc + curr.totalRevenue, 0) || 0).toLocaleString()}`, icon: DollarSign, color: 'text-secondary' },
     { title: 'Active Users', value: '1,284', icon: Users, color: 'text-blue-500' },
     { title: 'Avg Occupancy', value: '78%', icon: Hotel, color: 'text-purple-500' },
   ];
@@ -74,7 +80,7 @@ const AdminAnalytics = () => {
                       <h4 className="text-2xl font-mono font-black text-white">{kpi.value}</h4>
                    </div>
                    <div className={`p-4 rounded-2xl bg-white/5 border border-white/5 ${kpi.color} group-hover:scale-110 transition-transform`}>
-                      <kpi.icon size={24} />
+                      <SafeIcon icon={kpi.icon} size={24} />
                    </div>
                 </motion.div>
              ))}
@@ -108,15 +114,15 @@ const AdminAnalytics = () => {
              <div className="glass-card">
                 <div className="flex items-center justify-between mb-8">
                    <h3 className="text-sm font-heading font-black text-white uppercase tracking-[0.2em]">Revenue Mix</h3>
-                   <BarChart3 size={18} className="text-secondary" />
+                   <SafeIcon icon={LucideBarChart} size={18} className="text-secondary" />
                 </div>
                 <div className="h-[300px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.revenue}>
+                      <BarChartIcon data={data.revenue}>
                          <XAxis dataKey="_id" stroke="#6B6B80" fontSize={10} tickLine={false} axisLine={false} />
                          <Tooltip cursor={{ fill: 'rgba(255,107,53,0.05)' }} contentStyle={{ backgroundColor: '#12121A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} />
                          <Bar dataKey="totalRevenue" fill="#FF6B35" radius={[6, 6, 0, 0]} barSize={40} />
-                      </BarChart>
+                      </BarChartIcon>
                    </ResponsiveContainer>
                 </div>
              </div>
@@ -129,12 +135,12 @@ const AdminAnalytics = () => {
                 <h3 className="text-sm font-heading font-black text-white uppercase tracking-[0.2em] mb-8">Top Destinations</h3>
                 <div className="h-[300px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.destinations} layout="vertical">
+                      <BarChartIcon data={data.destinations} layout="vertical">
                          <XAxis type="number" hide />
                          <YAxis dataKey="_id" type="category" stroke="#6B6B80" fontSize={10} width={80} tickLine={false} axisLine={false} />
                          <Tooltip cursor={{ fill: 'rgba(0,212,200,0.03)' }} contentStyle={{ backgroundColor: '#12121A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} />
                          <Bar dataKey="count" fill="#00D4C8" radius={[0, 6, 6, 0]} barSize={20} />
-                      </BarChart>
+                      </BarChartIcon>
                    </ResponsiveContainer>
                 </div>
              </div>
@@ -169,8 +175,5 @@ const AdminAnalytics = () => {
     </div>
   );
 };
-
-// Simple icon shim
-const BarChart3 = ({ size, className }) => <PieChart size={size} className={className} />;
 
 export default AdminAnalytics;

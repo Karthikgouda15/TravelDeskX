@@ -16,6 +16,33 @@ const trainSchema = new mongoose.Schema(
       type: String,
       default: 'Indian Railways',
     },
+    trainType: {
+      type: String,
+      enum: ['Rajdhani', 'Shatabdi', 'Duronto', 'Vande Bharat', 'Garib Rath', 'Superfast', 'Express', 'Mail', 'Tejas', 'Humsafar', 'Shatabdi', 'Antyodaya', 'Jan Shatabdi'],
+      default: 'Express',
+    },
+    distance: {
+      type: Number, // total distance in km
+    },
+    duration: {
+      hours: { type: Number, default: 0 },
+      minutes: { type: Number, default: 0 },
+    },
+    pantryAvailable: {
+      type: Boolean,
+      default: false,
+    },
+    coachComposition: {
+      type: String, // e.g., "1A-1, 2A-3, 3A-6, SL-10"
+    },
+    sourceStation: {
+      code: String,
+      name: String,
+    },
+    destinationStation: {
+      code: String,
+      name: String,
+    },
     route: [
       {
         stationCode: { type: String, required: true },
@@ -54,5 +81,8 @@ const trainSchema = new mongoose.Schema(
 
 // Index for route searching
 trainSchema.index({ 'route.stationCode': 1 });
+trainSchema.index({ 'route.stationName': 1 });
+trainSchema.index({ 'sourceStation.code': 1, 'destinationStation.code': 1 });
+trainSchema.index({ trainNumber: 1 });
 
 module.exports = mongoose.model('Train', trainSchema);

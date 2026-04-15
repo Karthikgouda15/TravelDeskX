@@ -1,63 +1,101 @@
 // /Users/karthikgouda/Desktop/TravelDesk/client/src/features/busSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../services/api';
 
-const API_URL = '/api/transport/search';
-
-export const getBuses = createAsyncThunk(
-  'buses/getBuses',
+// Async Thunks
+export const searchBuses = createAsyncThunk(
+  'buses/search',
   async (filters, thunkAPI) => {
     try {
-      const { origin, destination, date } = filters;
-      const response = await axios.get(`${API_URL}?category=bus&origin=${origin}&destination=${destination}&date=${date}`);
+      const { origin, destination, date, busType, amenity } = filters;
+      let url = `/buses/search?origin=${origin}&destination=${destination}&date=${date}`;
+      if (busType && busType !== 'All') url += `&busType=${busType}`;
+      if (amenity && amenity !== 'All') url += `&amenity=${amenity}`;
+      
+      const response = await api.get(url);
       return response.data.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message;
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Bus search failed');
     }
   }
 );
 
+export const getBusCities = createAsyncThunk(
+  'buses/cities',
+  async (query, thunkAPI) => {
+    try {
+      const response = await api.get(`/buses/cities?q=${query}`);
+      return response.data.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue('Failed to fetch cities');
+    }
+  }
+);
+
+const initialState = {
+  results: [],
+  cities: [],
+  isLoading: false,
+  isCityLoading: false,
+  error: null,
+  filters: {
+    origin: '',
+    destination: '',
+    date: new Date().toISOString().split('T')[0],
+    busType: 'All',
+    amenity: 'All',
+    sortBy: 'price-asc'
+  },
+  selectedBus: null,
+};
+
 const busSlice = createSlice({
   name: 'buses',
-  initialState: {
-    results: [],
-    isLoading: false,
-    isError: false,
-    message: '',
-    selectedBus: null,
-    filters: { origin: '', destination: '', date: '' },
-  },
+  initialState,
   reducers: {
-    setFilters: (state, action) => {
+    setBusFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
-    },
-    resetBusState: (state) => {
-      state.results = [];
-      state.isLoading = false;
-      state.isError = false;
-      state.message = '';
     },
     setSelectedBus: (state, action) => {
       state.selectedBus = action.payload;
     },
+    updateBusRealTime: (state, action) => {
+      const { busId, availableSeats, bookedSeats } = action.payload;
+      const bus = state.results.find(b => b._id === busId);
+      if (bus) {
+        bus.availableSeats = availableSeats;
+        bus.bookedSeats = bookedSeats;
+      }
+    },
+    resetBusState: (state) => {
+      state.results = [];
+      state.error = null;
+      state.isLoading = false;
+    }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getBuses.pending, (state) => {
+      .addCase(searchBuses.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
-      .addCase(getBuses.fulfilled, (state, action) => {
+      .addCase(searchBuses.fulfilled, (state, action) => {
         state.isLoading = false;
         state.results = action.payload;
       })
-      .addCase(getBuses.rejected, (state, action) => {
+      .addCase(searchBuses.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        state.error = action.payload;
+      })
+      .addCase(getBusCities.pending, (state) => {
+        state.isCityLoading = true;
+      })
+      .addCase(getBusCities.fulfilled, (state, action) => {
+        state.isCityLoading = false;
+        state.cities = action.payload;
       });
   },
 });
 
-export const { resetBusState, setSelectedBus, setFilters } = busSlice.actions;
+export const { setBusFilters, setSelectedBus, updateBusRealTime, resetBusState } = busSlice.actions;
 export default busSlice.reducer;

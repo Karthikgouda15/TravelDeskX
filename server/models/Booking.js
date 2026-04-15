@@ -65,6 +65,14 @@ const bookingSchema = new mongoose.Schema(
       enum: ['unpaid', 'paid', 'refunded'],
       default: 'unpaid',
     },
+    passengers: [
+      {
+        name: { type: String, required: true },
+        age: { type: Number, required: true },
+        gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
+        seatNumber: String // Specifically for Bus/Train
+      }
+    ],
   },
   {
     timestamps: true,

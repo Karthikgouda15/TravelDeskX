@@ -115,34 +115,47 @@ const bookingSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getMyBookings.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(getMyBookings.fulfilled, (state, action) => {
         state.isLoading = false;
         state.myBookings = action.payload.data;
         state.pagination = action.payload.pagination;
       })
-      .addCase(getMyBookings.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
       .addCase(createFlightBooking.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.checkout.bookingResponse = action.payload;
         state.checkout.currentStep = 3;
       })
       .addCase(createHotelBooking.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.checkout.bookingResponse = action.payload;
         state.checkout.currentStep = 3;
       })
       .addCase(createTrainBooking.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.checkout.bookingResponse = action.payload;
         state.checkout.currentStep = 3;
       })
       .addCase(createBusBooking.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.checkout.bookingResponse = action.payload;
         state.checkout.currentStep = 3;
-      });
+      })
+      // Generic pending handler
+      .addMatcher(
+        (action) => action.type.endsWith('/pending') && action.type.startsWith('bookings/'),
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      // Generic rejected handler
+      .addMatcher(
+        (action) => action.type.endsWith('/rejected') && action.type.startsWith('bookings/'),
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload || 'An unexpected error occurred';
+        }
+      );
   },
 });
 

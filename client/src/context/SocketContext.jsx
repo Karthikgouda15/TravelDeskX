@@ -5,8 +5,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateFlightRealTime } from '../features/flightSlice';
 import { updateRoomAvailability } from '../features/hotelSlice';
 import { updateRealtimeOccupancy } from '../features/analyticsSlice';
+import { updateTrainRealTime } from '../features/trainSlice';
 
-const SocketContext = createContext();
+export const SocketContext = createContext();
 
 export const useSocket = () => useContext(SocketContext);
 
@@ -17,8 +18,13 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     let newSocket;
+    
+    // In complex dev environments, window.location.origin might be 5173 
+    // but server is 5002. Using explicit server URL if possible.
+    const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:5002' : window.location.origin;
+
     if (isAuthenticated) {
-      newSocket = io(window.location.origin, {
+      newSocket = io(socketUrl, {
         withCredentials: true,
       });
 
@@ -28,18 +34,20 @@ export const SocketProvider = ({ children }) => {
 
       // Global event listeners for inventory
       newSocket.on('room:updated', (data) => {
-        console.log('🎯 Room Update Received:', data);
         dispatch(updateRoomAvailability(data));
         dispatch(updateRealtimeOccupancy(data));
       });
 
       newSocket.on('seat:updated', (data) => {
-        console.log('🎯 Seat Update Received:', data);
         dispatch(updateFlightRealTime(data));
       });
 
+      newSocket.on('train:seatUpdate', (data) => {
+        console.log('🚂 Train Seat Update Received:', data);
+        dispatch(updateTrainRealTime(data));
+      });
+
       newSocket.on('flight:status_updated', (data) => {
-        console.log('🎯 Flight Status Update Received:', data);
         dispatch(updateFlightRealTime(data));
       });
 

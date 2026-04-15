@@ -1,13 +1,13 @@
 // src/components/Sidebar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, PieChart, Hotel, PlaneTakeoff, Settings } from 'lucide-react';
+import { LayoutDashboard, BarChart2, PieChart, Hotel, PlaneTakeoff, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Sidebar = () => {
   const adminLinks = [
     { name: 'Overview', path: '/admin/analytics', icon: LayoutDashboard },
-    { name: 'Revenue', path: '/admin/analytics?tab=revenue', icon: BarChart3 },
+    { name: 'Revenue', path: '/admin/analytics?tab=revenue', icon: BarChart2 },
     { name: 'Occupancy', path: '/admin/analytics?tab=occupancy', icon: Hotel },
     { name: 'Flights', path: '/admin/analytics?tab=flights', icon: PlaneTakeoff },
     { name: 'Settings', path: '/admin/settings', icon: Settings },

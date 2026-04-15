@@ -31,12 +31,30 @@ const initSocket = (httpServer) => {
   io.on('connection', (socket) => {
     console.log(`🔌 Socket connected: ${socket.id}`);
 
-    // Allow clients to subscribe to a specific flight room for targeted updates
+    // Allow clients to subscribe to a specific flight room
     socket.on('flight:subscribe', (flightId) => {
       socket.join(`flight:${flightId}`);
     });
     socket.on('flight:unsubscribe', (flightId) => {
       socket.leave(`flight:${flightId}`);
+    });
+
+    // Train subscription
+    socket.on('train:subscribe', (trainId) => {
+      socket.join(`train:${trainId}`);
+    });
+    socket.on('train:unsubscribe', (trainId) => {
+      socket.leave(`train:${trainId}`);
+    });
+
+    // Bus Subscriptions
+    socket.on('bus:subscribe', (busId) => {
+      socket.join(`bus:${busId}`);
+      console.log(`🚍 User joined bus room: ${busId}`);
+    });
+
+    socket.on('bus:unsubscribe', (busId) => {
+      socket.leave(`bus:${busId}`);
     });
 
     socket.on('disconnect', () => {
@@ -49,25 +67,37 @@ const initSocket = (httpServer) => {
 };
 
 /**
- * Emits a flight:priceUpdate event to all connected clients.
- * Called from bookingController after a flight seat is booked/released.
- * @param {string} flightId
- * @param {number} availableSeats
- * @param {number} price
- * @param {string} airline
+ * Emits a flight:priceUpdate event
  */
 const emitFlightUpdate = (flightId, availableSeats, price, airline) => {
   if (!io) return;
   const payload = { flightId, availableSeats, price, airline, timestamp: Date.now() };
-  // Broadcast globally AND to the flight-specific room
   io.emit('flight:priceUpdate', payload);
   io.to(`flight:${flightId}`).emit('flight:priceUpdate', payload);
 };
 
 /**
+ * Emits a train:seatUpdate event
+ */
+const emitTrainUpdate = (trainId, classType, availableSeats) => {
+  if (!io) return;
+  const payload = { trainId, classType, availableSeats, timestamp: Date.now() };
+  io.emit('train:seatUpdate', payload);
+  io.to(`train:${trainId}`).emit('train:seatUpdate', payload);
+};
+
+/**
+ * Emits a bus:seatUpdate event
+ */
+const emitBusUpdate = (busId, availableSeats) => {
+  if (!io) return;
+  const payload = { busId, availableSeats, timestamp: Date.now() };
+  io.emit('bus:seatUpdate', payload);
+  io.to(`bus:${busId}`).emit('bus:seatUpdate', payload);
+};
+
+/**
  * Returns the initialized Socket.io instance.
- * Call this from controllers after initSocket() has been called.
- * @returns {Server}
  */
 const getIO = () => {
   if (!io) {
@@ -76,4 +106,4 @@ const getIO = () => {
   return io;
 };
 
-module.exports = { initSocket, getIO, emitFlightUpdate };
+module.exports = { initSocket, getIO, emitFlightUpdate, emitTrainUpdate, emitBusUpdate };

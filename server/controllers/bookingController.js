@@ -10,7 +10,7 @@ const Train = require('../models/Train');
 const Bus = require('../models/Bus');
 const apiResponse = require('../utils/apiResponse');
 const apiListResponse = require('../utils/apiListResponse');
-const { getIO, emitFlightUpdate } = require('../sockets/index');
+const { getIO, emitFlightUpdate, emitTrainUpdate, emitBusUpdate } = require('../sockets/index');
 
 // ─────────────────────────────────────────────
 // Helper: Generate or fetch seats for a flight
@@ -270,6 +270,7 @@ exports.getMyBookings = asyncHandler(async (req, res, next) => {
   if (req.query.status) filter.status = req.query.status;
 
   const bookings = await Booking.find(filter)
+    .populate('referenceId')
     .populate('seats', 'seatNumber class status')
     .populate('roomId', 'roomNumber type pricePerNight')
     .sort({ createdAt: -1 })
@@ -426,6 +427,15 @@ exports.bookTrain = asyncHandler(async (req, res, next) => {
     session.endSession();
   }
 
+  // Emit real-time seat update
+  try {
+    const updatedTrain = await Train.findById(trainId).lean();
+    const coachClass = updatedTrain.classes.find(c => c.type === classType);
+    emitTrainUpdate(trainId, classType, coachClass.availableSeats);
+  } catch (_) {
+    // Non-critical
+  }
+
   return apiResponse(res, 201, true, { booking }, 'Train ticket booked successfully');
 });
 
@@ -438,31 +448,39 @@ exports.bookTrain = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.bookBus = asyncHandler(async (req, res, next) => {
-  const { busId, seatCount } = req.body;
+  const { busId, seatNumbers, passengerDetails } = req.body;
 
-  if (!busId || !seatCount) {
-    return apiResponse(res, 400, false, null, 'busId and seatCount are required');
+  if (!busId || !seatNumbers || !passengerDetails || !Array.isArray(seatNumbers)) {
+    return apiResponse(res, 400, false, null, 'busId, seatNumbers[] and passengerDetails[] are required');
   }
 
   const bus = await Bus.findById(busId);
-  if (!bus || bus.availableSeats < seatCount) {
-    return apiResponse(res, 400, false, null, 'Bus not found or seats unavailable');
+  if (!bus) return apiResponse(res, 404, false, null, 'Bus not found');
+
+  // Check if any requested seats are already booked
+  const alreadyBooked = seatNumbers.filter(s => bus.bookedSeats.includes(s));
+  if (alreadyBooked.length > 0) {
+    return apiResponse(res, 409, false, null, `Seats already booked: ${alreadyBooked.join(', ')}`);
   }
 
-  const totalPrice = bus.price * seatCount;
+  const totalPrice = bus.price * seatNumbers.length;
 
   const session = await mongoose.startSession();
   let booking;
 
   try {
     await session.withTransaction(async () => {
+      // Optimistic concurrency control: add requested seats to bookedSeats
       const updatedBus = await Bus.findOneAndUpdate(
-        { _id: busId, availableSeats: { $gte: seatCount } },
-        { $inc: { availableSeats: -seatCount } },
+        { _id: busId, bookedSeats: { $nin: seatNumbers } },
+        { 
+          $push: { bookedSeats: { $each: seatNumbers } },
+          $inc: { availableSeats: -seatNumbers.length }
+        },
         { new: true, session }
       );
 
-      if (!updatedBus) throw new Error('Seats no longer available');
+      if (!updatedBus) throw new Error('Some seats were taken by another user. Please retry.');
 
       [booking] = await Booking.create(
         [
@@ -472,6 +490,7 @@ exports.bookBus = asyncHandler(async (req, res, next) => {
             categoryModel: 'Bus',
             referenceId: busId,
             totalPrice,
+            passengers: passengerDetails,
             status: 'confirmed',
             paymentStatus: 'unpaid',
           },
@@ -485,6 +504,17 @@ exports.bookBus = asyncHandler(async (req, res, next) => {
     session.endSession();
   }
 
-  return apiResponse(res, 201, true, { booking }, 'Bus booking successful');
+  // Emit real-time seat update with the full list of booked seats
+  try {
+    const updatedBus = await Bus.findById(busId).select('availableSeats bookedSeats').lean();
+    emitBusUpdate(busId, {
+      availableSeats: updatedBus.availableSeats,
+      bookedSeats: updatedBus.bookedSeats
+    });
+  } catch (_) {
+    // Non-critical
+  }
+
+  return apiResponse(res, 201, true, { booking }, 'Bus ticket booked successfully');
 });
 

@@ -5,7 +5,7 @@ import { registerUser } from '../features/authSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Mail, Lock, User, Briefcase, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Mail, Lock, User, Briefcase, ArrowRight, Shield, Zap } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -54,7 +54,7 @@ const Register = () => {
 
          <div className="relative z-10 flex gap-12 border-t border-white/5 pt-12">
             {[
-               { icon: ShieldCheck, label: 'Secure Onboarding' },
+               { icon: Shield, label: 'Secure Onboarding' },
                { icon: Zap, label: 'Instant Role Access' },
             ].map(item => (
                <div key={item.label} className="flex items-center gap-3">
