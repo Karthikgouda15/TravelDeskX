@@ -37,6 +37,7 @@ import {
   setSelectedTrain
 } from '../features/trainSlice';
 import useTrainSocket from '../hooks/useTrainSocket';
+import { setCheckoutData } from '../features/bookingSlice';
 
 const Trains = () => {
   const dispatch = useDispatch();
@@ -98,13 +99,13 @@ const Trains = () => {
 
   const onBook = (train, cls) => {
     dispatch(setSelectedTrain({ ...train, selectedClass: cls }));
-    // In a real app, this would navigateto checkout with state
-    navigate('/checkout', { state: { 
-      type: 'train', 
-      item: train, 
+    dispatch(setCheckoutData({
+      type: 'train',
+      item: train,
       selectedClass: cls,
       passengers: filters.passengers || 1 
-    }});
+    }));
+    navigate('/checkout');
   };
 
   return (

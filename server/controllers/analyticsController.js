@@ -100,7 +100,7 @@ exports.getOccupancyStats = asyncHandler(async (req, res, next) => {
       $lookup: {
         from: 'rooms',
         localField: '_id',
-        foreignField: hotelId,
+        foreignField: 'hotelId',
         as: 'rooms',
       },
     },

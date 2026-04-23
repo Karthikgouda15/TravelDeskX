@@ -456,12 +456,25 @@ const Hotels = () => {
   }, [dispatch, searchParams]);
 
   useEffect(() => {
-    dispatch(getHotels(filters));
-  }, [dispatch, filters.city]);
+    // Strip empty values so the backend doesn't filter on empty strings
+    const cleanParams = {};
+    if (filters.city) cleanParams.city = filters.city;
+    if (filters.starRating) cleanParams.starRating = filters.starRating;
+    if (filters.priceMax && filters.priceMax < 1000) cleanParams.priceMax = filters.priceMax;
+    if (filters.amenities?.length) cleanParams.amenities = filters.amenities.join(',');
+    dispatch(getHotels(cleanParams));
+  }, [dispatch, filters.city, filters.starRating, filters.priceMax, JSON.stringify(filters.amenities)]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    dispatch(getHotels({ ...filters, guests: guestConfig.adults + guestConfig.children }));
+    const cleanParams = {};
+    if (filters.city) cleanParams.city = filters.city;
+    if (filters.checkIn) cleanParams.checkIn = filters.checkIn;
+    if (filters.checkOut) cleanParams.checkOut = filters.checkOut;
+    if (filters.starRating) cleanParams.starRating = filters.starRating;
+    if (filters.priceMax && filters.priceMax < 1000) cleanParams.priceMax = filters.priceMax;
+    cleanParams.guests = guestConfig.adults + guestConfig.children;
+    dispatch(getHotels(cleanParams));
   };
 
   const handleCityClick = (city) => {

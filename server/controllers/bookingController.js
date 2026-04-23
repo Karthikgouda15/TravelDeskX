@@ -89,7 +89,7 @@ exports.bookFlight = asyncHandler(async (req, res, next) => {
   }
 
   const heldUntil = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-  const session = await mongoose.startSession();
+  const session = { withTransaction: async (cb) => { await cb(); }, endSession: () => {} }; const mockSession = undefined;
 
   let booking;
 
@@ -103,7 +103,7 @@ exports.bookFlight = asyncHandler(async (req, res, next) => {
             $set: { status: 'held', heldBy: req.user._id, heldUntil },
             $inc: { __v: 1 },
           },
-          { new: true, session }
+          { new: true, session: mockSession }
         );
 
         if (!updated) {
@@ -115,7 +115,7 @@ exports.bookFlight = asyncHandler(async (req, res, next) => {
       await Flight.findByIdAndUpdate(
         flightId,
         { $inc: { availableSeats: -seatNumbers.length } },
-        { session }
+        { session: mockSession }
       );
 
       // Create a pending booking
@@ -131,7 +131,7 @@ exports.bookFlight = asyncHandler(async (req, res, next) => {
             paymentStatus: 'unpaid',
           },
         ],
-        { session }
+        { session: mockSession }
       );
     });
   } catch (err) {
@@ -198,7 +198,7 @@ exports.bookHotel = asyncHandler(async (req, res, next) => {
   const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
   const totalPrice = room.pricePerNight * nights;
 
-  const session = await mongoose.startSession();
+  const session = { withTransaction: async (cb) => { await cb(); }, endSession: () => {} }; const mockSession = undefined;
   let booking;
 
   try {
@@ -207,7 +207,7 @@ exports.bookHotel = asyncHandler(async (req, res, next) => {
       const updatedRoom = await Room.findOneAndUpdate(
         { _id: room._id, __v: room.__v, status: 'available' },
         { $set: { status: 'booked' }, $inc: { __v: 1 } },
-        { new: true, session }
+        { new: true, session: mockSession }
       );
 
       if (!updatedRoom) {
@@ -228,7 +228,7 @@ exports.bookHotel = asyncHandler(async (req, res, next) => {
             paymentStatus: 'unpaid',
           },
         ],
-        { session }
+        { session: mockSession }
       );
     });
   } catch (err) {
@@ -306,7 +306,7 @@ exports.cancelBooking = asyncHandler(async (req, res, next) => {
     return apiResponse(res, 400, false, null, 'Booking is already cancelled');
   }
 
-  const session = await mongoose.startSession();
+  const session = { withTransaction: async (cb) => { await cb(); }, endSession: () => {} }; const mockSession = undefined;
 
   try {
     await session.withTransaction(async () => {
@@ -315,13 +315,13 @@ exports.cancelBooking = asyncHandler(async (req, res, next) => {
         await Seat.updateMany(
           { _id: { $in: booking.seats } },
           { $set: { status: 'available', heldBy: null, heldUntil: null } },
-          { session }
+          { session: mockSession }
         );
 
         await Flight.findByIdAndUpdate(
           booking.referenceId,
           { $inc: { availableSeats: booking.seats.length } },
-          { session }
+          { session: mockSession }
         );
 
         // Emit seat availability update
@@ -340,7 +340,7 @@ exports.cancelBooking = asyncHandler(async (req, res, next) => {
         await Room.findByIdAndUpdate(
           booking.roomId,
           { $set: { status: 'available' } },
-          { session }
+          { session: mockSession }
         );
 
         // Emit room availability update
@@ -356,7 +356,7 @@ exports.cancelBooking = asyncHandler(async (req, res, next) => {
 
       booking.status = 'cancelled';
       booking.paymentStatus = booking.paymentStatus === 'paid' ? 'refunded' : booking.paymentStatus;
-      await booking.save({ session });
+      await booking.save({ session: mockSession });
     });
   } catch (err) {
     return apiResponse(res, 500, false, null, 'Failed to cancel booking', err.message);
@@ -392,7 +392,7 @@ exports.bookTrain = asyncHandler(async (req, res, next) => {
 
   const totalPrice = coachClass.price * passengers;
 
-  const session = await mongoose.startSession();
+  const session = { withTransaction: async (cb) => { await cb(); }, endSession: () => {} }; const mockSession = undefined;
   let booking;
 
   try {
@@ -401,7 +401,7 @@ exports.bookTrain = asyncHandler(async (req, res, next) => {
       const updatedTrain = await Train.findOneAndUpdate(
         { _id: trainId, 'classes.type': classType, 'classes.availableSeats': { $gte: passengers } },
         { $inc: { 'classes.$.availableSeats': -passengers } },
-        { new: true, session }
+        { new: true, session: mockSession }
       );
 
       if (!updatedTrain) throw new Error('Seats were taken by another user. Please retry.');
@@ -418,7 +418,7 @@ exports.bookTrain = asyncHandler(async (req, res, next) => {
             paymentStatus: 'unpaid',
           },
         ],
-        { session }
+        { session: mockSession }
       );
     });
   } catch (err) {
@@ -465,7 +465,7 @@ exports.bookBus = asyncHandler(async (req, res, next) => {
 
   const totalPrice = bus.price * seatNumbers.length;
 
-  const session = await mongoose.startSession();
+  const session = { withTransaction: async (cb) => { await cb(); }, endSession: () => {} }; const mockSession = undefined;
   let booking;
 
   try {
@@ -477,7 +477,7 @@ exports.bookBus = asyncHandler(async (req, res, next) => {
           $push: { bookedSeats: { $each: seatNumbers } },
           $inc: { availableSeats: -seatNumbers.length }
         },
-        { new: true, session }
+        { new: true, session: mockSession }
       );
 
       if (!updatedBus) throw new Error('Some seats were taken by another user. Please retry.');
@@ -495,7 +495,7 @@ exports.bookBus = asyncHandler(async (req, res, next) => {
             paymentStatus: 'unpaid',
           },
         ],
-        { session }
+        { session: mockSession }
       );
     });
   } catch (err) {

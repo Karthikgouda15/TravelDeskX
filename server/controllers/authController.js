@@ -30,7 +30,7 @@ const sendTokenResponse = async (user, statusCode, res, message) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'strict',
+    sameSite: 'lax',
   };
 
   res
@@ -148,4 +148,30 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
   } catch (err) {
     return apiResponse(res, 401, false, null, 'Session refresh failed', err.message);
   }
+});
+
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+exports.updateProfile = asyncHandler(async (req, res, next) => {
+  const { name, email, currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user.id).select('+password');
+
+  if (!user) return apiResponse(res, 404, false, null, 'User not found');
+
+  if (name) user.name = name;
+  if (email) user.email = email;
+
+  if (newPassword) {
+    if (!currentPassword) return apiResponse(res, 400, false, null, 'Current password required');
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) return apiResponse(res, 401, false, null, 'Current password is incorrect');
+    user.password = newPassword;
+  }
+
+  await user.save();
+  user.password = undefined;
+  return apiResponse(res, 200, true, { user }, 'Profile updated successfully');
 });

@@ -11,20 +11,19 @@ import { SocketProvider } from './context/SocketContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Lazy Loaded Pages
-const Landing = lazy(() => import('./pages/Landing'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Flights = lazy(() => import('./pages/Flights'));
-const Hotels = lazy(() => import('./pages/Hotels'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const MyBookings = lazy(() => import('./pages/MyBookings'));
-const Itinerary = lazy(() => import('./pages/Itinerary'));
-const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics'));
-const Trains = lazy(() => import('./pages/Trains'));
-const Buses = lazy(() => import('./pages/Buses'));
-const StatusTracker = lazy(() => import('./pages/StatusTracker'));
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Flights from './pages/Flights';
+import Hotels from './pages/Hotels';
+import Checkout from './pages/Checkout';
+import MyBookings from './pages/MyBookings';
+import Itinerary from './pages/Itinerary';
+import AdminAnalytics from './pages/AdminAnalytics';
+import Trains from './pages/Trains';
+import Buses from './pages/Buses';
+import StatusTracker from './pages/StatusTracker';
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-black relative overflow-hidden">
@@ -82,8 +81,7 @@ function App() {
             
             {isAuthenticated && <Navbar />}
 
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
+            <Routes>
                 {/* Public / Auth */}
                 <Route path="/" element={!isAuthenticated ? <Landing /> : <Navigate to="/flights" />} />
                 <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/flights" />} />
@@ -104,8 +102,7 @@ function App() {
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </Suspense>
+            </Routes>
           </div>
         </Router>
       </SocketProvider>

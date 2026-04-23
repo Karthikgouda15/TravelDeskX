@@ -2,7 +2,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
-const { register, login, logout, getMe, refreshToken } = require('../controllers/authController');
+const { register, login, logout, getMe, refreshToken, updateProfile } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const apiResponse = require('../utils/apiResponse');
 
@@ -11,7 +11,7 @@ const router = express.Router();
 // Specific rate limiter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 10, // Increased for smoother testing
+  max: 100, // High limit for smooth development/demo
   message: 'Security Alert: Access restricted due to multiple failed attempts. Please retry in 15 minutes.',
   handler: (req, res, next, options) => {
     return apiResponse(res, 429, false, null, options.message);
@@ -55,5 +55,6 @@ router.post(
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
 
 module.exports = router;

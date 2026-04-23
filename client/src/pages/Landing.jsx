@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   getFlights, getPriceTrend, setFilters, setSelectedFlight, resetFlightState,
 } from '../features/flightSlice';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   Search, ArrowRightLeft, Plane, Calendar, User, ChevronDown,
@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import SkeletonCard from '../components/SkeletonCard';
 import AirportAutocomplete from '../components/AirportAutocomplete';
-import FareCalendar from '../components/FareCalendar';
 import FlightCard from '../components/FlightCard';
 import useFlightSocket from '../hooks/useFlightSocket';
 
@@ -22,24 +21,32 @@ const TRIP_TYPES = [
   { id: 'multi-city',  label: 'Multi-City' },
 ];
 
+/* Simple Search Card */
+const SimpleCard = ({ children }) => {
+  return (
+    <div className="relative z-30">
+      <div className="w-full bg-[#111111]/80 backdrop-blur-xl p-10 rounded-[2rem] relative shadow-2xl border border-white/10">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const Landing = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const flightState = useSelector((state) => state.flights);
-  const { results = [], isLoading = false, isPriceTrendLoading = false, filters = {} } = flightState || {};
+  const { results = [], isLoading = false, filters = {} } = flightState || {};
 
   const [showTravelerDropdown, setShowTravelerDropdown] = useState(false);
   const [expandedFlightId, setExpandedFlightId] = useState(null);
   const travelerRef = useRef(null);
-
-  // Real-time socket connection
   const { liveUpdates } = useFlightSocket();
 
   useEffect(() => {
     return () => { dispatch(resetFlightState()); };
   }, [dispatch]);
 
-  // Close traveler dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
       if (travelerRef.current && !travelerRef.current.contains(e.target)) setShowTravelerDropdown(false);
@@ -65,8 +72,7 @@ const Landing = () => {
     dispatch(setFilters({ origin: filters.destination, destination: filters.origin }));
   };
 
-  const onSelectFlight = (flight) => {
-    // Landing page is unauthenticated, redirect to login
+  const onSelectFlight = () => {
     navigate('/login', { state: { message: 'Sign in to book this flight' }});
   };
 
@@ -77,242 +83,253 @@ const Landing = () => {
   const tickerMessages = [
     ...liveUpdates.map(u => `🔴 Live: ${u.airline} — ${u.availableSeats} seats remaining at ₹${u.price?.toLocaleString('en-IN')}`),
     'Prices for BOM → DEL dropped 12% in the last hour',
-    '🔥 High demand: 450 people looking at DEL → BOM right now',
-    'BLR → PNQ dropped ₹500 just now',
     '⚡ TravelDesk Assured offers ₹0 cancellation on all premium tickets',
-    '🔐 Your data is end-to-end encrypted on every booking',
+    '🔐 Encryption enabled on all active bookings',
+    'Global aviation APIs synchronizing in real-time',
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-black overflow-x-hidden relative selection:bg-white/10">
+    <div className="flex flex-col min-h-screen bg-[#020202] overflow-x-hidden relative selection:bg-[#00D4C8]/30">
       <Helmet>
-        <title>TravelDesk Pro | Premium Travel Logistics</title>
+        <title>TravelDesk Pro | Next-Gen Aviation Intelligence</title>
       </Helmet>
 
-      {/* Animated Aurora Background Layer */}
-      <motion.div 
-        animate={{ 
-          x: [0, 50, -30, 0],
-          y: [0, -40, 60, 0],
-          scale: [1, 1.1, 0.9, 1]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute top-[-20%] left-[-10%] w-[1200px] h-[1200px] bg-white/[0.02] rounded-full blur-[160px] pointer-events-none"
-      />
+
 
       {/* Top Navbar Header */}
-      <header className="relative z-50 flex items-center justify-between px-8 py-6 max-w-7xl w-full mx-auto">
+      <header className="relative z-50 flex items-center justify-between px-8 py-8 max-w-[1400px] w-full mx-auto">
         <Link to="/" className="flex items-center gap-4 group">
-          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]">
-            <span className="font-sans font-black text-black text-lg tracking-tighter">TD</span>
+          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+            <span className="font-sans font-black text-black text-xl tracking-tighter">TD</span>
           </div>
-          <span className="font-sans font-bold text-2xl tracking-tight text-white">TravelDesk <span className="text-[10px] text-white/40 align-top ml-1">PRO</span></span>
+          <span className="font-sans font-bold text-3xl tracking-tight text-white group-hover:text-[#00D4C8] transition-colors duration-500">
+            TravelDesk 
+            <span className="text-[11px] text-white/40 align-top ml-1 tracking-[0.2em] font-mono">PRO</span>
+          </span>
         </Link>
-        <div className="flex items-center gap-6">
-          <Link to="/login" className="text-white/60 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Sign In</Link>
-          <Link to="/register" className="btn-primary text-xs font-black px-6 py-2">Create Identity</Link>
+        <div className="flex items-center gap-8">
+          <Link to="/login" className="text-white/60 hover:text-white text-xs font-bold uppercase tracking-[0.2em] transition-colors relative group">
+            Sign In
+            <div className="absolute -bottom-2 left-0 w-full h-[1px] bg-[#00D4C8] scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+          </Link>
+          <Link to="/register" className="relative group overflow-hidden bg-white text-black text-xs font-black px-8 py-3.5 rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+            <span className="relative z-10 uppercase tracking-widest">Create Identity</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-[#00D4C8]/20 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          </Link>
         </div>
       </header>
 
-      {/* Live Ticker */}
-      <div className="w-full border-b border-white/5 bg-black/40 backdrop-blur-md relative z-40 flex items-center py-2 overflow-hidden">
-        <div className="flex items-center gap-2 px-6 z-10 bg-black shadow-[20px_0_20px_black] pr-4 shrink-0 border-r border-white/10">
-          <Radio size={10} className="text-white fill-white animate-pulse" />
-          <span className="text-[9px] font-black uppercase text-white tracking-[0.2em]">Network Feed</span>
+      {/* Futuristic Ticker */}
+      <div className="w-full border-y border-white/5 bg-[#050505]/80 backdrop-blur-xl relative z-40 flex items-center py-2.5 overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2.5 px-8 z-10 bg-[#050505] shadow-[30px_0_30px_#050505] shrink-0 border-r border-white/5">
+          <Radio size={12} className="text-[#00D4C8] fill-[#00D4C8] animate-pulse drop-shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
+          <span className="text-[10px] font-mono font-bold uppercase text-white/80 tracking-[0.3em]">Network Feed</span>
         </div>
         <motion.div
           initial={{ x: '0%' }}
           animate={{ x: '-100%' }}
-          transition={{ ease: 'linear', duration: 40, repeat: Infinity }}
-          className="flex items-center flex-nowrap"
+          transition={{ ease: 'linear', duration: 30, repeat: Infinity }}
+          className="flex items-center flex-nowrap pl-4"
         >
           {[...tickerMessages, ...tickerMessages].map((msg, i) => (
-            <span key={i} className="text-[10px] font-bold text-textMuted uppercase tracking-widest mx-10 inline-block">
+            <span key={i} className="text-[11px] font-mono font-medium text-white/50 uppercase tracking-[0.15em] mx-12 inline-block whitespace-nowrap">
               {msg}
             </span>
           ))}
         </motion.div>
       </div>
 
-      {/* Main Hero & Search Context */}
-      <main className="flex-1 relative z-20 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 flex flex-col gap-16">
+      {/* Main Hero Context */}
+      <main className="flex-1 relative z-20 max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 lg:py-20 flex flex-col gap-20">
         
-        {/* Hero Typography */}
-        <div className="max-w-2xl text-center mx-auto space-y-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
-            className="text-6xl md:text-8xl font-sans font-bold tracking-tightest leading-[0.9] silver-text"
-          >
-            Unlimited <br /> horizons.
-          </motion.h1>
+        {/* Typography */}
+        <div className="text-center mx-auto space-y-8 max-w-4xl relative">
+          <div className="absolute inset-0 bg-[#00D4C8] blur-[150px] opacity-10 rounded-full w-1/2 mx-auto pointer-events-none" />
+          <h1 className="text-7xl md:text-[110px] font-sans font-black tracking-[-0.05em] leading-[0.85] text-white mix-blend-plus-lighter drop-shadow-2xl">
+            Unlimited horizons.
+          </h1>
           <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 1 }}
-            className="text-[#A1A1A1] text-lg font-light leading-relaxed max-w-lg mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 1 }}
+            className="text-white/60 text-xl font-light leading-relaxed max-w-2xl mx-auto tracking-wide"
           >
-            The enterprise standard for high-performance travel logistics. End-to-end intelligence mapped in real-time.
+            The enterprise standard for high-performance travel logistics. <br className="hidden md:block"/> 
+            End-to-end intelligence mapped in real-time.
           </motion.p>
         </div>
 
-        {/* Flight Search Module */}
+        {/* 3D Flight Search Module */}
         <motion.div
-           initial={{ opacity: 0, y: 40, scale: 0.98 }}
+           initial={{ opacity: 0, y: 60, scale: 0.95 }}
            animate={{ opacity: 1, y: 0, scale: 1 }}
-           transition={{ delay: 0.2, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-           className="w-full glass-card border border-white/10 p-8 pt-10 shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative"
+           transition={{ delay: 0.8, duration: 1.2, type: "spring", stiffness: 80, damping: 20 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent opacity-100 pointer-events-none" />
-
-          {/* Search Types */}
-          <div className="flex items-center gap-1 mb-8">
-            {TRIP_TYPES.map(type => (
-              <button
-                key={type.id}
-                onClick={() => dispatch(setFilters({ tripType: type.id }))}
-                className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all
-                  ${filters.tripType === type.id || (!filters.tripType && type.id === 'one-way')
-                    ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)]'
-                    : 'text-white/60 border border-white/10 hover:border-white/30 hover:text-white'
-                  }`}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSearch} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-              {/* Origin */}
-              <div className="md:col-span-3 relative">
-                <AirportAutocomplete
-                  id="landing-origin"
-                  label="From"
-                  placeholder="City or IATA"
-                  value={filters.origin}
-                  icon={<Plane size={16} className="text-white/50" />}
-                  onChange={(airport) => dispatch(setFilters({ origin: airport.iata || airport.city || '' }))}
-                />
+          <SimpleCard>
+            <div className="flex items-center gap-2 mb-10 overflow-x-auto scrollbar-hide">
+              {TRIP_TYPES.map(type => (
                 <button
-                  type="button"
-                  onClick={swapLocations}
-                  className="absolute -right-5 top-[50%] mt-2 z-20 w-10 h-10 flex items-center justify-center bg-black border border-white/20 rounded-full hover:border-white hover:bg-white/10 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hidden md:flex text-white"
-                  title="Swap"
+                  key={type.id}
+                  onClick={() => dispatch(setFilters({ tripType: type.id }))}
+                  className={`px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap
+                    ${filters.tripType === type.id || (!filters.tripType && type.id === 'one-way')
+                      ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105'
+                      : 'text-white/50 border border-white/5 hover:border-white/20 hover:text-white hover:bg-white/5'
+                    }`}
                 >
-                  <ArrowRightLeft size={16} />
+                  {type.label}
                 </button>
-              </div>
-
-              {/* Destination */}
-              <div className="md:col-span-3">
-                <AirportAutocomplete
-                  id="landing-destination"
-                  label="To"
-                  placeholder="City or IATA"
-                  value={filters.destination}
-                  align="right"
-                  icon={<Plane size={16} className="text-white/50 rotate-90" />}
-                  onChange={(airport) => dispatch(setFilters({ destination: airport.iata || airport.city || '' }))}
-                />
-              </div>
-
-              {/* Date */}
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-[10px] uppercase font-bold text-white/50 tracking-[0.2em] flex items-center gap-1.5 ml-1">
-                  <Calendar size={12} /> Departure
-                </label>
-                <input
-                  type="date"
-                  value={filters.date || ''}
-                  onChange={(e) => dispatch(setFilters({ date: e.target.value }))}
-                  className="input-field bg-white/5 border-white/10 w-full text-base py-3"
-                />
-              </div>
-
-              {/* Travelers */}
-              <div className="md:col-span-2 space-y-2 relative" ref={travelerRef}>
-                <label className="text-[10px] uppercase font-bold text-white/50 tracking-[0.2em] flex items-center gap-1.5 ml-1">
-                  <User size={12} /> Travelers
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowTravelerDropdown(!showTravelerDropdown)}
-                  className="input-field bg-white/5 border-white/10 w-full text-base py-[11px] flex items-center justify-between text-left"
-                >
-                  <span className="text-white">{filters.passengers || 1} Adult{filters.passengers > 1 ? 's' : ''}</span>
-                  <ChevronDown size={16} className={`text-white/50 transition-transform ${showTravelerDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {showTravelerDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="absolute top-full mt-2 w-48 bg-[#111] border border-white/10 rounded-2xl shadow-2xl z-50 p-4 space-y-3"
-                    >
-                      <p className="text-[10px] font-black uppercase text-white/40 tracking-widest mb-1">Adults</p>
-                      <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => dispatch(setFilters({ passengers: Math.max(1, (filters.passengers || 1) - 1) }))}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:border-white hover:bg-white/10 text-white font-black text-xl transition-colors">−</button>
-                        <span className="font-mono font-black text-xl w-6 text-center text-white">{filters.passengers || 1}</span>
-                        <button type="button" onClick={() => dispatch(setFilters({ passengers: Math.min(9, (filters.passengers || 1) + 1) }))}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:border-white hover:bg-white/10 text-white font-black text-xl transition-colors">+</button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Search Action */}
-              <div className="md:col-span-2 flex items-end">
-                <button
-                  type="submit"
-                  className="w-full bg-white text-black hover:bg-gray-200 h-[50px] rounded-xl flex items-center justify-center gap-3 group/btn transition-all font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                >
-                  <Search size={16} className="group-hover/btn:scale-110 transition-transform" />
-                  Search
-                </button>
-              </div>
+              ))}
             </div>
-          </form>
+
+            <form onSubmit={handleSearch} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+                {/* Origin */}
+                <div className="md:col-span-3 relative group">
+                  <div className="absolute inset-0 bg-[#00D4C8] blur-xl opacity-0 group-focus-within:opacity-10 transition-opacity duration-500 rounded-2xl pointer-events-none"/>
+                  <AirportAutocomplete
+                    id="landing-origin"
+                    label="From"
+                    placeholder="City or IATA"
+                    value={filters.origin}
+                    icon={<Plane size={18} className="text-[#00D4C8]/80" />}
+                    onChange={(airport) => dispatch(setFilters({ origin: airport.iata || airport.city || '' }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={swapLocations}
+                    className="absolute -right-6 top-[55%] z-20 w-12 h-12 flex items-center justify-center bg-[#111] border border-white/10 rounded-full hover:border-[#00D4C8] hover:text-[#00D4C8] text-white transition-all shadow-2xl hidden md:flex hover:scale-110 active:scale-95"
+                  >
+                    <ArrowRightLeft size={16} />
+                  </button>
+                </div>
+
+                {/* Destination */}
+                <div className="md:col-span-3 relative group">
+                  <div className="absolute inset-0 bg-[#FF6B35] blur-xl opacity-0 group-focus-within:opacity-10 transition-opacity duration-500 rounded-2xl pointer-events-none"/>
+                  <AirportAutocomplete
+                    id="landing-destination"
+                    label="To"
+                    placeholder="City or IATA"
+                    value={filters.destination}
+                    align="right"
+                    icon={<Plane size={18} className="text-[#FF6B35]/80 rotate-90" />}
+                    onChange={(airport) => dispatch(setFilters({ destination: airport.iata || airport.city || '' }))}
+                  />
+                </div>
+
+                {/* Date */}
+                <div className="md:col-span-2 space-y-2 relative group">
+                  <div className="absolute inset-0 bg-white blur-xl opacity-0 group-focus-within:opacity-5 transition-opacity duration-500 rounded-2xl pointer-events-none"/>
+                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em] flex items-center gap-2 ml-2">
+                    <Calendar size={12} className="text-white/60" /> Departure
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.date || ''}
+                    onChange={(e) => dispatch(setFilters({ date: e.target.value }))}
+                    className="w-full px-5 py-[18px] bg-black/50 border border-white/10 rounded-2xl text-white outline-none focus:border-white/40 transition-all font-medium text-lg"
+                  />
+                </div>
+
+                {/* Travelers */}
+                <div className="md:col-span-2 space-y-2 relative" ref={travelerRef}>
+                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em] flex items-center gap-2 ml-2">
+                    <User size={12} className="text-white/60" /> Travelers
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowTravelerDropdown(!showTravelerDropdown)}
+                    className="w-full px-5 py-[18px] bg-black/50 border border-white/10 rounded-2xl text-white flex items-center justify-between text-left hover:border-white/30 transition-colors"
+                  >
+                    <span className="font-medium text-lg">{filters.passengers || 1} Adult{filters.passengers > 1 ? 's' : ''}</span>
+                    <ChevronDown size={16} className={`text-white/40 transition-transform duration-300 ${showTravelerDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {showTravelerDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full mt-3 w-56 bg-[#111111] border border-white/10 rounded-2xl shadow-2xl z-50 p-5 backdrop-blur-xl"
+                      >
+                        <p className="text-[10px] font-bold uppercase text-white/30 tracking-[0.2em] mb-3">Occupancy</p>
+                        <div className="flex items-center justify-between bg-black/50 rounded-xl p-2 border border-white/5">
+                          <button type="button" onClick={() => dispatch(setFilters({ passengers: Math.max(1, (filters.passengers || 1) - 1) }))}
+                            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors active:scale-95">−</button>
+                          <span className="font-mono font-bold text-xl text-white">{filters.passengers || 1}</span>
+                          <button type="button" onClick={() => dispatch(setFilters({ passengers: Math.min(9, (filters.passengers || 1) + 1) }))}
+                            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors active:scale-95">+</button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Search Action */}
+                <div className="md:col-span-2 flex items-end">
+                  <button
+                    type="submit"
+                    className="w-full h-[62px] relative group overflow-hidden bg-white rounded-2xl flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4C8]/10 to-transparent group-hover:translate-x-full duration-1000 transform -translate-x-full" />
+                    <span className="text-black font-black uppercase tracking-[0.2em] text-[11px] relative z-10 flex items-center gap-2">
+                       <Search size={16} strokeWidth={3} className="text-black group-hover:rotate-12 transition-transform duration-300" />
+                       Search
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </SimpleCard>
         </motion.div>
 
         {/* Real-time Results Area */}
         {results.length > 0 && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="w-full pb-20"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full pb-20 relative z-20"
           >
-            <div className="flex items-center justify-between mb-8">
-               <h2 className="text-3xl font-sans font-bold text-white tracking-tight">Active Flights.</h2>
-               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/20">
-                 <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                 <span className="text-[10px] font-black uppercase text-white tracking-widest">Live Inventory</span>
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+               <div>
+                 <h2 className="text-4xl font-sans font-black text-white tracking-tight leading-none mb-3">Live Inventory.</h2>
+                 <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Matched {results.length} highly optimized routes</p>
+               </div>
+               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00D4C8]/10 border border-[#00D4C8]/20 self-start">
+                 <div className="w-2 h-2 rounded-full bg-[#00D4C8] shadow-[0_0_10px_#00D4C8] animate-pulse" />
+                 <span className="text-[10px] font-bold uppercase text-[#00D4C8] tracking-widest">Real-Time Sync</span>
                </div>
             </div>
 
             <div className="space-y-4">
               {results.slice(0, 5).map((flight, i) => (
-                <FlightCard
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  transition={{ delay: i * 0.1 }}
                   key={flight._id}
-                  flight={flight}
-                  index={i}
-                  isRecommendation={false}
-                  onSelect={onSelectFlight}
-                  isExpanded={expandedFlightId === flight._id}
-                  onToggle={() => toggleExpand(flight._id)}
-                  isLanding={true}
-                />
+                >
+                  <FlightCard
+                    flight={flight}
+                    index={i}
+                    isRecommendation={false}
+                    onSelect={onSelectFlight}
+                    isExpanded={expandedFlightId === flight._id}
+                    onToggle={() => toggleExpand(flight._id)}
+                    isLanding={true}
+                  />
+                </motion.div>
               ))}
             </div>
 
             {results.length > 5 && (
-              <div className="mt-8 text-center">
-                 <button onClick={onSelectFlight} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors border-b border-white/20 pb-1">
-                   View {results.length - 5} More Options
+              <div className="mt-12 text-center">
+                 <button onClick={onSelectFlight} className="relative group inline-flex items-center gap-3">
+                   <span className="text-xs font-black uppercase tracking-[0.2em] text-white/50 group-hover:text-white transition-colors duration-300 border-b border-white/20 pb-1 border-dotted">
+                     Unlock {results.length - 5} More Enterprises Rates
+                   </span>
+                   <ChevronRight size={14} className="text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
                  </button>
               </div>
             )}
@@ -320,18 +337,25 @@ const Landing = () => {
         )}
 
         {isLoading && (
-           <div className="w-full py-10 opacity-50">
+           <div className="w-full py-10 opacity-40">
               <SkeletonCard count={3} />
            </div>
         )}
 
       </main>
 
-      {/* Footer minimal */}
-      <footer className="border-t border-white/[0.05] py-8 text-center relative z-20 mt-auto">
-        <p className="text-[10px] font-medium uppercase text-white/20 tracking-[0.2em]">
-          TravelDesk PRO &copy; {new Date().getFullYear()} · Architecture v8.4.1
-        </p>
+      {/* Footer */}
+      <footer className="border-t border-white/[0.05] py-10 relative z-20 mt-auto bg-black/50 backdrop-blur-md">
+        <div className="max-w-[1400px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-[10px] font-mono uppercase text-white/30 tracking-[0.2em]">
+            TravelDesk PRO &copy; {new Date().getFullYear()}
+          </p>
+          <div className="flex items-center gap-6">
+            <span className="text-[10px] font-bold uppercase text-white/20 tracking-widest hover:text-white/60 cursor-pointer transition-colors">Architecture v9.0</span>
+            <span className="text-[10px] font-bold uppercase text-white/20 tracking-widest hover:text-white/60 cursor-pointer transition-colors">API Docs</span>
+            <span className="text-[10px] font-bold uppercase text-white/20 tracking-widest hover:text-white/60 cursor-pointer transition-colors">Status</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

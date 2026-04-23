@@ -82,12 +82,12 @@ const MyBookings = () => {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                  <h4 className="font-heading font-black text-lg">
-                                    {booking.categoryModel === 'Flight' && (booking.referenceId?.origin || 'Flight Trip')}
-                                    {booking.categoryModel === 'Hotel' && (booking.referenceId?.name || 'Hotel Stay')}
-                                    {booking.categoryModel === 'Train' && (booking.referenceId?.name || 'Train Journey')}
-                                    {booking.categoryModel === 'Bus' && (
+                                    {booking.type === 'flight' && (booking.referenceId ? `${booking.referenceId.originCity || booking.referenceId.origin || ''} → ${booking.referenceId.destinationCity || booking.referenceId.destination || ''}` : 'Flight Trip')}
+                                    {booking.type === 'hotel' && (booking.referenceId?.name || 'Hotel Stay')}
+                                    {booking.type === 'train' && (booking.referenceId?.name || 'Train Journey')}
+                                    {booking.type === 'bus' && (
                                       booking.referenceId?.origin?.city 
-                                      ? `${booking.referenceId?.origin?.city} to ${booking.referenceId?.destination?.city || 'Unknown'}`
+                                      ? `${booking.referenceId?.origin?.city} → ${booking.referenceId?.destination?.city || 'Unknown'}`
                                       : 'Bus Journey'
                                     )}
                                  </h4>

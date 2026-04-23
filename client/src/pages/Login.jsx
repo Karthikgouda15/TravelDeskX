@@ -168,6 +168,28 @@ const Login = () => {
                   <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                </button>
 
+               <div className="relative py-4 flex items-center gap-4">
+                  <div className="flex-1 h-px bg-white/5"></div>
+                  <span className="text-[9px] uppercase tracking-widest text-white/20 font-bold">Recruiter Mode</span>
+                  <div className="flex-1 h-px bg-white/5"></div>
+               </div>
+
+               <button
+                  type="button"
+                  onClick={async () => {
+                     setFormData({ email: 'admin@traveldesk.io', password: 'Admin@12345' });
+                     const result = await dispatch(loginUser({ email: 'admin@traveldesk.io', password: 'Admin@12345' }));
+                     if (loginUser.fulfilled.match(result)) {
+                        navigate('/flights');
+                     }
+                  }}
+                  disabled={isLoading}
+                  className="w-full py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-[11px] uppercase tracking-[0.3em] font-black text-white/60 flex items-center justify-center gap-3 disabled:opacity-50"
+               >
+                  <span>{isLoading ? 'Authenticating...' : 'Quick Demo Access'}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+               </button>
+
                <div className="text-center pt-10 border-t border-white/[0.05]">
                   <p className="text-[11px] font-medium uppercase text-white/20 tracking-[0.15em]">
                      Unauthorized access is prohibited. <br />

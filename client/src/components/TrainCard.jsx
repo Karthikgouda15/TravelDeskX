@@ -57,7 +57,7 @@ const TrainCard = ({ train, onBook }) => {
           <div className="flex-1 text-center md:text-left">
             <p className="text-[10px] font-bold text-[#A1A1A1] uppercase tracking-widest mb-2">Departure</p>
             <h4 className="text-3xl font-black text-white mb-1 tabular-nums tracking-tighter">{train.departureTime}</h4>
-            <p className="text-sm font-medium text-white/60">{train.fromStation.name} ({train.fromStation.code})</p>
+            <p className="text-sm font-medium text-white/60">{train.fromStation?.stationName || train.sourceStation?.name} ({train.fromStation?.stationCode || train.sourceStation?.code})</p>
           </div>
 
           <div className="flex-[1.5] flex flex-col items-center">
@@ -70,14 +70,14 @@ const TrainCard = ({ train, onBook }) => {
             </div>
             <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1A1A1A] border border-white/5">
               <Clock size={12} className="text-[#A1A1A1]" />
-              <span className="text-[11px] font-bold text-white tracking-tight">15h 30m</span>
+              <span className="text-[11px] font-bold text-white tracking-tight">{train.legDuration || (train.duration ? `${train.duration.hours}h ${train.duration.minutes}m` : '—')}</span>
             </div>
           </div>
 
           <div className="flex-1 text-center md:text-right">
             <p className="text-[10px] font-bold text-[#A1A1A1] uppercase tracking-widest mb-2">Arrival</p>
             <h4 className="text-3xl font-black text-white mb-1 tabular-nums tracking-tighter">{train.arrivalTime}</h4>
-            <p className="text-sm font-medium text-white/60">{train.toStation.name} ({train.toStation.code})</p>
+            <p className="text-sm font-medium text-white/60">{train.toStation?.stationName || train.destinationStation?.name} ({train.toStation?.stationCode || train.destinationStation?.code})</p>
           </div>
         </div>
 
